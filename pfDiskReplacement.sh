@@ -1,5 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2155
+set -o pipefail
 
 # References:
 # https://redmine.pfsense.org/issues/15081
@@ -169,7 +170,7 @@ elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfGoodDisk}${IFS} ]]; then
 elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfBadDisk}${IFS} ]]; then
 	echo "${pfBadDisk} is not a valid option." >&2
 	exit 1
-elif [ ! "${pfNewDisk}" = "${pfGoodDisk}" ] || [ ! "${pfNewDisk}" = "${pfBadDisk}" ]; then
+elif [ "${pfNewDisk}" = "${pfGoodDisk}" ] || [ "${pfNewDisk}" = "${pfBadDisk}" ]; then
 	echo "${pfNewDisk} cannot be the same as the other disks." >&2
 	exit 1
 fi
