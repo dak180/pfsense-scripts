@@ -10,6 +10,7 @@
 
 # Vars
 pfZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | cut -wf 4)"
+readarray -t "driveList" <<< "$(sysctl -n kern.disks)"
 
 # Functions
 function pfDrUsage() {
@@ -139,24 +140,40 @@ EOF
 fi
 
 if [ -z "${pfNewDisk}" ]; then
-	read -rp $'\n\nPick the "New" disk:\n['"$(sysctl -n kern.disks)"'] ' choice
+	read -rp $'\n\nPick the "New" disk:\n['"${driveList[*]}"'] ' choice
 	pfNewDisk="${choice}"
 fi
 
 if [ -z "${pfGoodDisk}" ]; then
-	read -rp $'\n\nPick the "Good" disk:\n['"$(sysctl -n kern.disks)"'] ' choice
+	read -rp $'\n\nPick the "Good" disk:\n['"${driveList[*]}"'] ' choice
 	pfGoodDisk="${choice}"
 fi
 
 if [ -z "${pfBadDisk}" ]; then
-	read -rp $'\n\nPick the "Old" disk:\n['"$(sysctl -n kern.disks)"'] ' choice
+	read -rp $'\n\nPick the "Old" disk:\n['"${driveList[*]}"'] ' choice
 	pfBadDisk="${choice}"
 fi
 
+
 # Die if we do not have enough info
+IFS="|"
 if [ -z "${pfNewDisk}" ] || [ -z "${pfGoodDisk}" ] || [ -z "${pfBadDisk}" ]; then
+	echo "Not all disks defined." >&2
+	exit 1
+elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfNewDisk}${IFS} ]]; then
+	echo "${pfNewDisk} is not a valid option." >&2
+	exit 1
+elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfGoodDisk}${IFS} ]]; then
+	echo "${pfGoodDisk} is not a valid option." >&2
+	exit 1
+elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfBadDisk}${IFS} ]]; then
+	echo "${pfBadDisk} is not a valid option." >&2
+	exit 1
+elif [ ! "${pfNewDisk}" = "${pfGoodDisk}" ] || [ ! "${pfNewDisk}" = "${pfBadDisk}" ]; then
+	echo "${pfNewDisk} cannot be the same as the other disks." >&2
 	exit 1
 fi
+unset IFS
 
 
 pfCheckDiskSize
