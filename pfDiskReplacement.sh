@@ -10,7 +10,7 @@
 
 # Vars
 pfZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | cut -wf 4)"
-readarray -t "driveList" <<< "$(sysctl -n kern.disks)"
+readarray -t "driveList" <<< "$(sysctl -n kern.disks | sed -e 's: :\n:g' | grep -v 'mmcsd' | grep -v 'sdda' | grep -v 'ccd' | sort -V)"
 
 # Functions
 function pfDrUsage() {
