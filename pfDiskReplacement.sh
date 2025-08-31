@@ -9,8 +9,7 @@ set -o pipefail
 # https://www.yourwarrantyisvoid.com/2023/05/04/pfsense-replacing-a-failed-zfs-disk/
 # https://wiki.joeplaa.com/en/zfs
 
-# Vars
-pfZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
+# Static Vars
 readarray -t "driveList" <<< "$(sysctl -n kern.disks | sed -e 's: :\n:g' | grep -v 'mmcsd' | grep -v 'sdda' | grep -v 'ccd' | sort -V)"
 
 # Functions
@@ -190,6 +189,10 @@ elif [ "${pfNewDisk}" = "${pfGoodDisk}" ] || [ "${pfNewDisk}" = "${pfBadDisk}" ]
 	exit 1
 fi
 unset IFS
+
+
+# Use Dependent Vars
+pfZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 
 
 pfCheckDiskSize
