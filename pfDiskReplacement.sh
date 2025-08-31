@@ -48,6 +48,21 @@ function pfCheckDiskSize() {
 	fi
 }
 
+function pfDiskLabel() {
+	# Use the gptid and fall back to the gpt label
+	local pfNewZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
+	local pfNewGPTID="$(glabel status | grep "${pfNewDisk}p${pfNewZfsPartNum}" | grep 'gptid' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 1)"
+	local pfNewGPTlabel="$(glabel status | grep "${pfNewDisk}p${pfNewZfsPartNum}" | grep 'gpt' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 1)"
+
+	if [ ! -z "${pfNewGPTID}" ]; then
+		pfZfsReadyName="${pfNewGPTID}"
+	elif [ ! -z "${pfNewGPTlabel}" ]; then
+		pfZfsReadyName="${pfNewGPTlabel}"
+	else
+		pfZfsReadyName="${pfNewDisk}p${pfNewZfsPartNum}"
+	fi
+}
+
 function pfInitializeDisk () {
 	# Vars
 	local pfBootCode="$(grep "gpart bootcode" /var/log/bsdinstall_log)"
@@ -94,7 +109,7 @@ function pfInitializeDisk () {
 function pfZfsReplace() {
 	local pfZpoolName="$(zpool list -H -o name)"
 
-	zpool replace "${pfZpoolName}" "${pfBadDisk}p${pfZfsPartNum}" "${pfNewDisk}p${pfZfsPartNum}" || { echo "Failed to replace the disk." >&2; exit 1;}
+	zpool replace "${pfZpoolName}" "${pfBadDisk}p${pfZfsPartNum}" "${pfZfsReadyName}" || { echo "Failed to replace the disk." >&2; exit 1;}
 }
 
 
@@ -181,4 +196,10 @@ pfCheckDiskSize
 
 pfInitializeDisk
 
+pfDiskLabel
+
 pfZfsReplace
+
+clear
+
+zpool status
