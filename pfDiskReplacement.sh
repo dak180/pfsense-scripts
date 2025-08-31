@@ -10,7 +10,7 @@ set -o pipefail
 # https://wiki.joeplaa.com/en/zfs
 
 # Vars
-pfZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | cut -wf 4)"
+pfZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 readarray -t "driveList" <<< "$(sysctl -n kern.disks | sed -e 's: :\n:g' | grep -v 'mmcsd' | grep -v 'sdda' | grep -v 'ccd' | sort -V)"
 
 # Functions
@@ -52,12 +52,12 @@ function pfInitializeDisk () {
 	# Vars
 	local pfBootCode="$(grep "gpart bootcode" /var/log/bsdinstall_log)"
 
-	local pfBootPartNum="$(gpart show "${pfGoodDisk}" | grep 'boot' | cut -wf 4)"
-	local pfSwapPartNum="$(gpart show "${pfGoodDisk}" | grep 'swap' | cut -wf 4)"
-	local pfEfiPartNum="$(gpart show "${pfGoodDisk}" | grep 'efi' | cut -wf 4)"
+	local pfBootPartNum="$(gpart show "${pfGoodDisk}" | grep 'boot' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
+	local pfSwapPartNum="$(gpart show "${pfGoodDisk}" | grep 'swap' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
+	local pfEfiPartNum="$(gpart show "${pfGoodDisk}" | grep 'efi' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 
 	local pfOldDiskNum="$(echo "${pfGoodDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::')"
-	local pfNewDiskNum="$(echo "${pfNewDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::')"
+	local pfNewDiskNum="$(echo "${pfNewDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::' -e 's:nda::' -e 's:md::' -e 's:ccd::')"
 
 	# Determine the disk number
 	if [ "${pfOldDiskNum}" -ge "${pfNewDiskNum}" ]; then
