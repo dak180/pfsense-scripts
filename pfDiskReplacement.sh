@@ -208,16 +208,31 @@ fi
 if [ -z "${pfNewDisk}" ]; then
 	read -rp $'\n\nPick the "New" disk:\n['"${driveList[*]}"'] ' choice
 	pfNewDisk="${choice}"
+	pfInteract="1"
 fi
 
 if [ -z "${pfGoodDisk}" ]; then
 	read -rp $'\n\nPick the "Good" disk:\n['"${driveList[*]}"'] ' choice
 	pfGoodDisk="${choice}"
+	pfInteract="1"
 fi
 
 if [ -z "${pfBadDisk}" ]; then
 	read -rp $'\n\nPick the "Old" disk:\n['"${driveList[*]}"'] ' choice
 	pfBadDisk="${choice}"
+	pfInteract="1"
+fi
+
+if [ "1" = "${pfInteract}" ]; then
+	cat > "/dev/stderr" << EOF
+You have selected:
+	"New" disk: ${pfNewDisk} (will be completely erased)
+	"Good" disk: ${pfGoodDisk} (will be used as a template)
+	"Old" disk: ${pfBadDisk} (will be replaced in the pool)
+
+EOF
+	read -rp $'\n\nContinue?\n[y|N] ' choice
+
 fi
 
 
