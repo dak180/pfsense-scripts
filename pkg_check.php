@@ -52,24 +52,24 @@
 
   if (empty($installed_packages)) {
     printf("%s\n", 'No packages installed');
-    log_error("No packages installed, exiting");
-    exit;
+    log_error("No packages installed");
+  } else {
+	  foreach ($installed_packages as $pkg) {
+		if (isset($pkg['installed_version']) && isset($pkg['version'])) {
+		  //printf("%s%s%s\n", $pkg['shortname'], ': ', $pkg['installed_version']);
+		  $version_compare = pkg_version_compare($pkg['installed_version'], $pkg['version']);
+		  if ($version_compare != '=') {
+			$p++;
+			$pmsg .= "\n".$pkg['shortname'].': '.$pkg['installed_version'].' ==> '.$pkg['version'];
+			if ($version_compare == '>') {
+			  $pmsg .= ' (downgrade)';
+			}
+			printf("%s%s%s%s%s\n", $pkg['shortname'], ': ', $pkg['installed_version'], ' ==> ', $pkg['version']);
+		  }
+		}
+	  }
   }
 
-  foreach ($installed_packages as $pkg) {
-    if (isset($pkg['installed_version']) && isset($pkg['version'])) {
-      //printf("%s%s%s\n", $pkg['shortname'], ': ', $pkg['installed_version']);
-      $version_compare = pkg_version_compare($pkg['installed_version'], $pkg['version']);
-      if ($version_compare != '=') {
-        $p++;
-        $pmsg .= "\n".$pkg['shortname'].': '.$pkg['installed_version'].' ==> '.$pkg['version'];
-        if ($version_compare == '>') {
-          $pmsg .= ' (downgrade)';
-        }
-        printf("%s%s%s%s%s\n", $pkg['shortname'], ': ', $pkg['installed_version'], ' ==> ', $pkg['version']);
-      }
-    }
-  }
 
   if ($p > 0) {
     $msg = $msg . "The following updates are available and can be installed using System > Package Manager:\n" . $pmsg;
