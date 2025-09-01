@@ -132,6 +132,7 @@ function pfMapLabels() {
 		[[ -z "${key}" ]] && continue
 		labelTranslationList["${key}"]="${value}"
 	done <<< "${glabelList}"
+	unset IFS
 
 
 	if echo "${pfZpoolStatus}" | grep -q 'gptid/'; then
