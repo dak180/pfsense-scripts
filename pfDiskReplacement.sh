@@ -42,7 +42,7 @@ function pfCheckDiskSize() {
 	local pfOldDiskSize="$(smartctl -xj "${pfGoodDisk}" | jq -Mre '.user_capacity.bytes | values')"
 
 	if [ ! "${pfNewDiskSize}" -ge "${pfOldDiskSize}" ]; then
-		echo "${pfNewDisk} is not larger than ${pfBadDisk}."  >&2
+		echo "${pfNewDisk} is not larger than ${pfGoodDisk}."  >&2
 		exit 1
 	fi
 }
@@ -51,7 +51,7 @@ function pfDiskLabel() {
 	# Use the gptid and fall back to the gpt label
 	local pfNewZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 	local pfNewGPTID="$(glabel status | grep "${pfNewDisk}p${pfNewZfsPartNum}" | grep 'gptid' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 1)"
-	local pfNewGPTlabel="$(glabel status | grep "${pfNewDisk}p${pfNewZfsPartNum}" | grep 'gpt' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 1)"
+	local pfNewGPTlabel="$(glabel status | grep "${pfNewDisk}p${pfNewZfsPartNum}" | grep 'gpt' | grep -v 'gptid' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 1)"
 
 	if [ ! -z "${pfNewGPTID}" ]; then
 		pfZfsReadyName="${pfNewGPTID}"
@@ -80,6 +80,10 @@ function pfInitializeDisk () {
 
 	# Get the bootcode command
 	local pfBootCodeCmd="$(echo "${pfBootCode}" | grep "${pfGoodDisk}" | sed -e 's|DEBUG: zfs_create_diskpart: ||' -e 's:":'\'':g' -e "s:${pfGoodDisk}:${pfNewDisk}:")"
+	if [ -z "${pfBootCodeCmd}" ]; then
+		echo "Failed to find the boot code." >&2
+		exit 1
+	fi
 
 	# Copy the partion layout to the new disk
 	gpart backup "${pfGoodDisk}" | gpart restore -F "${pfNewDisk}" || { echo "Failed to initialize the disk." >&2; exit 1;}
@@ -141,13 +145,13 @@ fi
 if [ -z "${pfNewDisk}" ] || [ -z "${pfGoodDisk}" ] || [ -z "${pfBadDisk}" ]; then
 	cat > "/dev/stderr" << EOF
 This script will help automate replacing a disk in a zfs mirror on pfSense. It
-expects that the disk that you will be introducing into the mirror is is entirly
-blank and has not been initialized in any way. Addtionally the new must be at
-least as large as the smallest disk in the array. As well as specifing the new
-disk, you will also need to specify a "Good" disk that will be used as a
-template for the partion layout and an "Old" disk that the new disk will replace
-(the "Good" and "Old" disks can be the same disk). If both disks are unhealthy
-please reinstall instead.
+expects that the disk that you will be introducing into the mirror is is
+entirely blank and has not been initialized in any way. Additionally the new
+must be at least as large as the smallest disk in the array. As well as
+specifing the new disk, you will also need to specify a "Good" disk that will be
+used as a template for the partion layout and an "Old" disk that the new disk
+will replace (the "Good" and "Old" disks can be the same disk). If both disks
+are unhealthy please reinstall instead.
 
 EOF
 
