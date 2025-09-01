@@ -10,6 +10,7 @@ set -o pipefail
 # https://wiki.joeplaa.com/en/zfs
 
 # Static Vars
+declare -A pfMemberName
 readarray -t "driveList" <<< "$(sysctl -n kern.disks | sed -e 's: :\n:g' | grep -v 'mmcsd' | grep -v 'sdda' | grep -v 'ccd' | sort -V)"
 
 # Functions
@@ -111,8 +112,53 @@ function pfInitializeDisk () {
 
 function pfZfsReplace() {
 	local pfZpoolName="$(zpool list -H -o name)"
+	local pfRplaceDisk
+	if [ ! -z "${pfMemberName["${pfBadDisk}p${pfZfsPartNum}"]}" ]; then
+		pfRplaceDisk="${pfMemberName["${pfBadDisk}p${pfZfsPartNum}"]}"
+	else
+		pfRplaceDisk="${pfBadDisk}p${pfZfsPartNum}"
+	fi
+	zpool replace "${pfZpoolName}" "${pfRplaceDisk}" "${pfZfsReadyName}" || { echo "Failed to replace the disk." >&2; exit 1;}
+}
 
-	zpool replace "${pfZpoolName}" "${pfBadDisk}p${pfZfsPartNum}" "${pfZfsReadyName}" || { echo "Failed to replace the disk." >&2; exit 1;}
+function pfMapLabels() {
+	local glabelList="$(glabel status | tail -n +2 | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 1,3)"
+	local -A labelTranslationList
+	local key
+	local value
+	pfZpoolStatus="$(zpool status -L)"
+
+	while IFS=$' \t' read -r key value; do
+		[[ -z "${key}" ]] && continue
+		labelTranslationList["${key}"]="${value}"
+	done <<< "${glabelList}"
+
+
+	if echo "${pfZpoolStatus}" | grep -q 'gptid/'; then
+		local -a pfgptidList
+
+		readarray -t "pfgptidList" <<< "$(zpool status -L | grep 'gptid/' | sed -e 's:^[[:space:]]*::' | cut -wf 1)"
+
+		local diskID
+		for diskID in "${pfgptidList[@]}"; do
+			# shellcheck disable=SC2116
+			pfZpoolStatus="$(echo "${pfZpoolStatus//${diskID}/${labelTranslationList["${diskID}"]}}")"
+			pfMemberName["${labelTranslationList["${diskID}"]}"]="${diskID}"
+		done
+	fi
+
+	if zpool status -L | grep -q 'gpt/'; then
+		local -a pfgptList
+
+		readarray -t "pfgptList" <<< "$(zpool status -L | grep 'gpt/' | sed -e 's:^[[:space:]]*::' | cut -wf 1)"
+
+		local diskID
+		for diskID in "${pfgptList[@]}"; do
+			# shellcheck disable=SC2116
+			pfZpoolStatus="$(echo "${pfZpoolStatus//${diskID}/${labelTranslationList["${diskID}"]}}")"
+			pfMemberName["${labelTranslationList["${diskID}"]}"]="${diskID}"
+		done
+	fi
 }
 
 
@@ -140,6 +186,7 @@ if [ ! "$(whoami)" = "root" ]; then
 	exit 1
 fi
 
+pfMapLabels
 
 # Intro Explanation; skip if we are fully defined
 if [ -z "${pfNewDisk}" ] || [ -z "${pfGoodDisk}" ] || [ -z "${pfBadDisk}" ]; then
@@ -155,7 +202,7 @@ are unhealthy please reinstall instead.
 
 EOF
 
-	zpool status
+	echo "${pfZpoolStatus}"
 fi
 
 if [ -z "${pfNewDisk}" ]; then
