@@ -95,7 +95,12 @@ function pfInitializeDisk () {
 	fi
 	gpart modify -i "${pfBootPartNum}" -l "gptboot${pfNewDiskNum}"
 	if [ ! -z "${pfSwapPartNum}" ]; then
-		gpart modify -i "${pfSwapPartNum}" -l "swap${pfNewDiskNum}" || { echo "Failed to initialize the disk." >&2; exit 1;}
+		if [ "${pfNoSwap}" = "1" ]; then
+			swapoff -a
+			gpart delete -i "${pfSwapPartNum}" "${pfNewDisk}" || { echo "Failed to remove the swap partition." >&2; exit 1;}
+		else
+			gpart modify -i "${pfSwapPartNum}" -l "swap${pfNewDiskNum}" || { echo "Failed to initialize the disk." >&2; exit 1;}
+		fi
 	fi
 	gpart modify -i "${pfZfsPartNum}" -l "zfs${pfNewDiskNum}" || { echo "Failed to initialize the disk." >&2; exit 1;}
 
@@ -163,7 +168,7 @@ function pfMapLabels() {
 }
 
 
-while getopts ":t:r:n:h" OPTION; do
+while getopts ":t:r:n:hs" OPTION; do
 	case "${OPTION}" in
 		t)
 			pfGoodDisk="${OPTARG}"
@@ -173,6 +178,9 @@ while getopts ":t:r:n:h" OPTION; do
 		;;
 		n)
 			pfNewDisk="${OPTARG}"
+		;;
+		s)
+			pfNoSwap=1
 		;;
 		h | ?)
 			pfDrUsage
