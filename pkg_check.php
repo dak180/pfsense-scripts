@@ -76,7 +76,7 @@
   }
 
   // check for updates to builtin packages
-  exec("/usr/sbin/pkg upgrade -n | /usr/bin/sed -ne '/UPGRADED/,/^$/p'", $output, $retval);
+  exec("/usr/local/sbin/pkg-static upgrade -n | /usr/bin/sed -ne '/UPGRADED/,/^$/p'", $output, $retval);
   if (($retval == 0) && (count($output))) {
     $msg .= "\n\n" . "Some packages are part of the base system and will not show up in Package Manager. If any such updates are listed below, run `pkg upgrade` from the shell to install them:\n\n";
     array_shift($output);
