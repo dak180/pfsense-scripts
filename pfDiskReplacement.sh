@@ -280,4 +280,6 @@ pfZfsReplace
 
 clear
 
+echo "Old Disk Serial Number: $(sudo smartctl -xj "${pfBadDisk}" | jq -Mre '.serial_number | values')"
+echo "New Disk Serial Number: $(sudo smartctl -xj "${pfNewDisk}" | jq -Mre '.serial_number | values')"
 zpool status
