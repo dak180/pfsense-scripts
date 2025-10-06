@@ -39,8 +39,8 @@ EOF
 }
 
 function pfCheckDiskSize() {
-	local pfNewDiskSize="$(smartctl -xj "${pfNewDisk}" | jq -Mre '.user_capacity.bytes | values')"
-	local pfOldDiskSize="$(smartctl -xj "${pfGoodDisk}" | jq -Mre '.user_capacity.bytes | values')"
+	local pfNewDiskSize="$(smartctl -xj "/dev/${pfNewDisk}" | jq -Mre '.user_capacity.bytes | values')"
+	local pfOldDiskSize="$(smartctl -xj "/dev/${pfGoodDisk}" | jq -Mre '.user_capacity.bytes | values')"
 
 	if [ ! "${pfNewDiskSize}" -ge "${pfOldDiskSize}" ]; then
 		echo "${pfNewDisk} is not larger than ${pfGoodDisk}."  >&2
@@ -123,7 +123,7 @@ function pfZfsReplace() {
 	else
 		pfRplaceDisk="${pfBadDisk}p${pfZfsPartNum}"
 	fi
-	zpool replace "${pfZpoolName}" "${pfRplaceDisk}" "${pfZfsReadyName}" || { echo "Failed to replace the disk." >&2; exit 1;}
+	zpool replace "${pfZpoolName}" "/dev/${pfRplaceDisk}" "/dev/${pfZfsReadyName}" || { echo "Failed to replace the disk." >&2; exit 1;}
 }
 
 function pfMapLabels() {
@@ -280,6 +280,6 @@ pfZfsReplace
 
 clear
 
-echo "Old Disk Serial Number: $(sudo smartctl -xj "${pfBadDisk}" | jq -Mre '.serial_number | values')"
-echo "New Disk Serial Number: $(sudo smartctl -xj "${pfNewDisk}" | jq -Mre '.serial_number | values')"
+echo "Old Disk Serial Number: $(sudo smartctl -xj "/dev/${pfBadDisk}" | jq -Mre '.serial_number | values')"
+echo "New Disk Serial Number: $(sudo smartctl -xj "/dev/${pfNewDisk}" | jq -Mre '.serial_number | values')"
 zpool status
