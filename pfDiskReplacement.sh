@@ -71,7 +71,7 @@ function pfInitializeDisk () {
 	local pfSwapPartNum="$(gpart show "${pfGoodDisk}" | grep 'swap' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 	local pfEfiPartNum="$(gpart show "${pfGoodDisk}" | grep 'efi' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 
-	local pfOldDiskNum="$(echo "${pfGoodDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::')"
+	local pfOldDiskNum="$(echo "${pfGoodDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::' -e 's:nda::' -e 's:md::' -e 's:ccd::')"
 	local pfNewDiskNum="$(echo "${pfNewDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::' -e 's:nda::' -e 's:md::' -e 's:ccd::')"
 
 	# Determine the disk number
