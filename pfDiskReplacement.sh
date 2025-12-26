@@ -88,11 +88,20 @@ function pfInitializeDisk () {
 	fi
 
 	# Get the bootcode command
-	local pfBootCodeCmd="$(echo "${pfBootCode}" | grep "${pfGoodDisk}" | sed -e 's|DEBUG: zfs_create_diskpart: ||' -e 's:"::g' -e "s:${pfGoodDisk}:${pfNewDisk}:")"
-	if [ -z "${pfBootCodeCmd}" ]; then
+	if [ ! -z "${pfBootCode}" ]; then
+		if ! grep -q "/boot/pmbr" <<< "${pfBootCode}" && [ ! -f "/boot/pmbr" ]; then
+			echo "Failed to find the boot code." >&2
+			exit 1
+		fi
+		if ! grep -q "/boot/gptzfsboot" <<< "${pfBootCode}" && [ ! -f "/boot/gptzfsboot" ]; then
+			echo "Failed to find the boot code." >&2
+			exit 1
+		fi
+	else
 		echo "Failed to find the boot code." >&2
 		exit 1
 	fi
+	local pfBootCodeCmd="gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i ${pfBootPartNum} ${pfNewDisk}"
 
 	# Copy the partition layout to the new disk
 	gpart backup "${pfGoodDisk}" | gpart restore -F "${pfNewDisk}" || { echo "Failed to initialize the disk." >&2; exit 1;}
