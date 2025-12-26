@@ -192,6 +192,20 @@ function pfMapLabels() {
 	fi
 }
 
+function pfDiskInList() {
+	# Returns 0 if the disk name exists in driveList[], 1 otherwise
+	local needle="$1"
+	local disk
+
+	for disk in "${driveList[@]}"; do
+		if [ "${disk}" = "${needle}" ]; then
+			return 0
+		fi
+	done
+
+	return 1
+}
+
 
 while getopts ":t:r:n:hs" OPTION; do
 	case "${OPTION}" in
@@ -271,24 +285,22 @@ fi
 
 
 # Die if we do not have enough info
-IFS="_"
 if [ -z "${pfNewDisk}" ] || [ -z "${pfGoodDisk}" ] || [ -z "${pfBadDisk}" ]; then
 	echo "Not all disks defined." >&2
 	exit 1
-elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfNewDisk}${IFS} ]]; then
+elif ! pfDiskInList "${pfNewDisk}"; then
 	echo "${pfNewDisk} is not a valid option." >&2
 	exit 1
-elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfGoodDisk}${IFS} ]]; then
+elif ! pfDiskInList "${pfGoodDisk}"; then
 	echo "${pfGoodDisk} is not a valid option." >&2
 	exit 1
-elif [[ ! "${IFS}${driveList[*]}${IFS}" =~ ${IFS}${pfBadDisk}${IFS} ]]; then
+elif ! pfDiskInList "${pfBadDisk}"; then
 	echo "${pfBadDisk} is not a valid option." >&2
 	exit 1
 elif [ "${pfNewDisk}" = "${pfGoodDisk}" ] || [ "${pfNewDisk}" = "${pfBadDisk}" ]; then
 	echo "${pfNewDisk} cannot be the same as the other disks." >&2
 	exit 1
 fi
-unset IFS
 
 
 # Use Dependent Vars
