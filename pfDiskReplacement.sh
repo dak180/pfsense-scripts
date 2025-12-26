@@ -91,25 +91,25 @@ function pfInitializeDisk () {
 
 	# Fix layout
 	if [ ! -z "${pfEfiPartNum}" ]; then
-		gpart modify -i "${pfEfiPartNum}" -l "efiboot${pfNewDiskNum}" || { echo "Failed to initialize the disk." >&2; exit 1;}
+		gpart modify -i "${pfEfiPartNum}" -l "efiboot${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the efi partion." >&2; exit 1;}
 	fi
-	gpart modify -i "${pfBootPartNum}" -l "gptboot${pfNewDiskNum}"
+	gpart modify -i "${pfBootPartNum}" -l "gptboot${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the boot partion." >&2; exit 1;}
 	if [ ! -z "${pfSwapPartNum}" ]; then
 		if [ "${pfNoSwap}" = "1" ]; then
 			swapoff -a
 			gpart delete -i "${pfSwapPartNum}" "${pfNewDisk}" || { echo "Failed to remove the swap partition." >&2; exit 1;}
 		else
-			gpart modify -i "${pfSwapPartNum}" -l "swap${pfNewDiskNum}" || { echo "Failed to initialize the disk." >&2; exit 1;}
+			gpart modify -i "${pfSwapPartNum}" -l "swap${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the swap partion." >&2; exit 1;}
 		fi
 	fi
-	gpart modify -i "${pfZfsPartNum}" -l "zfs${pfNewDiskNum}" || { echo "Failed to initialize the disk." >&2; exit 1;}
+	gpart modify -i "${pfZfsPartNum}" -l "zfs${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the zfs partion." >&2; exit 1;}
 
 	# Setup the boot code
 	if [ ! -z "${pfEfiPartNum}" ]; then
-		newfs_msdos -F 32 -c 1 -L "EFISYS${pfNewDiskNum}"  "/dev/gpt/efiboot${pfNewDiskNum}" || { echo "Failed to set the boot code." >&2; exit 1;}
-		mount -t msdosfs "/dev/gpt/efiboot${pfNewDiskNum}" /mnt/ || { echo "Failed to set the boot code." >&2; exit 1;}
-		cp -Rp /boot/efi/ /mnt || { echo "Failed to set the boot code." >&2; exit 1;}
-		umount /mnt || { echo "Failed to set the boot code." >&2; exit 1;}
+		newfs_msdos -F 32 -c 1 -L "EFISYS${pfNewDiskNum}"  "/dev/gpt/efiboot${pfNewDiskNum}" || { echo "Failed to initialize the ms_dos partition." >&2; exit 1;}
+		mount -t msdosfs "/dev/gpt/efiboot${pfNewDiskNum}" /mnt/ || { echo "Failed to mount the ms_dos partition." >&2; exit 1;}
+		cp -R /boot/efi/ /mnt || { echo "Failed to set the efi boot code." >&2; exit 1;}
+		umount /mnt || { echo "Failed to unmount the ms_dos partition." >&2; exit 1;}
 	fi
 
 	${pfBootCodeCmd} || { echo "Failed to set the boot code." >&2; exit 1;}
