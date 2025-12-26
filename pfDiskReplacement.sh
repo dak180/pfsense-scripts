@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/local/bin/bash
 # shellcheck disable=SC2155
 set -o pipefail
 
