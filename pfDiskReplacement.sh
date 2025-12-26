@@ -101,7 +101,7 @@ function pfInitializeDisk () {
 		echo "Failed to find the boot code." >&2
 		exit 1
 	fi
-	if [ -z "${${pfBootPartNum}}" ]; then
+	if [ -z "${pfBootPartNum}" ]; then
 		echo "Template disk does not have a boot partition." >&2
 		exit 1
 	fi
