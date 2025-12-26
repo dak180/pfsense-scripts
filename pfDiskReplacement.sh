@@ -246,7 +246,7 @@ fi
 
 
 # Die if we do not have enough info
-IFS="|"
+IFS="_"
 if [ -z "${pfNewDisk}" ] || [ -z "${pfGoodDisk}" ] || [ -z "${pfBadDisk}" ]; then
 	echo "Not all disks defined." >&2
 	exit 1
