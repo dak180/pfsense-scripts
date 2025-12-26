@@ -101,6 +101,10 @@ function pfInitializeDisk () {
 		echo "Failed to find the boot code." >&2
 		exit 1
 	fi
+	if [ -z "${${pfBootPartNum}}" ]; then
+		echo "Template disk does not have a boot partition." >&2
+		exit 1
+	fi
 	local pfBootCodeCmd="gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i ${pfBootPartNum} ${pfNewDisk}"
 
 	# Copy the partition layout to the new disk
@@ -108,18 +112,18 @@ function pfInitializeDisk () {
 
 	# Fix layout
 	if [ ! -z "${pfEfiPartNum}" ]; then
-		gpart modify -i "${pfEfiPartNum}" -l "efiboot${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the efi partion." >&2; exit 1;}
+		gpart modify -i "${pfEfiPartNum}" -l "efiboot${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the efi partition." >&2; exit 1;}
 	fi
-	gpart modify -i "${pfBootPartNum}" -l "gptboot${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the boot partion." >&2; exit 1;}
+	gpart modify -i "${pfBootPartNum}" -l "gptboot${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the boot partition." >&2; exit 1;}
 	if [ ! -z "${pfSwapPartNum}" ]; then
 		if [ "${pfNoSwap}" = "1" ]; then
 			swapoff -a
 			gpart delete -i "${pfSwapPartNum}" "${pfNewDisk}" || { echo "Failed to remove the swap partition." >&2; exit 1;}
 		else
-			gpart modify -i "${pfSwapPartNum}" -l "swap${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the swap partion." >&2; exit 1;}
+			gpart modify -i "${pfSwapPartNum}" -l "swap${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the swap partition." >&2; exit 1;}
 		fi
 	fi
-	gpart modify -i "${pfZfsPartNum}" -l "zfs${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the zfs partion." >&2; exit 1;}
+	gpart modify -i "${pfZfsPartNum}" -l "zfs${pfNewDiskNum}" "${pfNewDisk}" || { echo "Failed to rename the zfs partition." >&2; exit 1;}
 
 	# Setup the boot code
 	if [ ! -z "${pfEfiPartNum}" ]; then
