@@ -80,7 +80,7 @@ function pfInitializeDisk () {
 	fi
 
 	# Get the bootcode command
-	local pfBootCodeCmd="$(echo "${pfBootCode}" | grep "${pfGoodDisk}" | sed -e 's|DEBUG: zfs_create_diskpart: ||' -e 's:":'\'':g' -e "s:${pfGoodDisk}:${pfNewDisk}:")"
+	local pfBootCodeCmd="$(echo "${pfBootCode}" | grep "${pfGoodDisk}" | sed -e 's|DEBUG: zfs_create_diskpart: ||' -e 's:"::g' -e "s:${pfGoodDisk}:${pfNewDisk}:")"
 	if [ -z "${pfBootCodeCmd}" ]; then
 		echo "Failed to find the boot code." >&2
 		exit 1
