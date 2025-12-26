@@ -299,6 +299,7 @@ else
 	pfNewSerial="$(smartctl -d 'sat,auto' -xj "/dev/${pfNewDisk}" | jq -Mre '.serial_number | values')"
 fi
 
-echo "Old Disk Serial Number: ${pfOldSerial}"
-echo "New Disk Serial Number: ${pfNewSerial}"
+echo "Old Disk Serial Number (${pfBadDisk}): ${pfOldSerial}"
+echo "New Disk Serial Number (${pfNewDisk}): ${pfNewSerial}"
+glabel status
 zpool status
