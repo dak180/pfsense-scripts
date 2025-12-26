@@ -39,8 +39,16 @@ EOF
 }
 
 function pfCheckDiskSize() {
-	local pfNewDiskSize="$(smartctl -xj "/dev/${pfNewDisk}" | jq -Mre '.user_capacity.bytes | values')"
-	local pfOldDiskSize="$(smartctl -xj "/dev/${pfGoodDisk}" | jq -Mre '.user_capacity.bytes | values')"
+	if smartctl -q silent -d test "/dev/${pfNewDisk}"; then
+		local pfNewDiskSize="$(smartctl -xj "/dev/${pfNewDisk}" | jq -Mre '.user_capacity.bytes | values')"
+	else
+		local pfNewDiskSize="$(smartctl -d 'sat,auto' -xj "/dev/${pfNewDisk}" | jq -Mre '.user_capacity.bytes | values')"
+	fi
+	if smartctl -q silent -d test "/dev/${pfGoodDisk}"; then
+		local pfOldDiskSize="$(smartctl -xj "/dev/${pfGoodDisk}" | jq -Mre '.user_capacity.bytes | values')"
+	else
+		local pfOldDiskSize="$(smartctl -d 'sat,auto' -xj "/dev/${pfGoodDisk}" | jq -Mre '.user_capacity.bytes | values')"
+	fi
 
 	if [ ! "${pfNewDiskSize}" -ge "${pfOldDiskSize}" ]; then
 		echo "${pfNewDisk} is not larger than ${pfGoodDisk}."  >&2
@@ -280,6 +288,17 @@ pfZfsReplace
 
 clear
 
-echo "Old Disk Serial Number: $(sudo smartctl -xj "/dev/${pfBadDisk}" | jq -Mre '.serial_number | values')"
-echo "New Disk Serial Number: $(sudo smartctl -xj "/dev/${pfNewDisk}" | jq -Mre '.serial_number | values')"
+if smartctl -q silent -d test "/dev/${pfBadDisk}"; then
+	pfOldSerial="$(smartctl -xj "/dev/${pfBadDisk}" | jq -Mre '.serial_number | values')"
+else
+	pfOldSerial="$(smartctl -d 'sat,auto' -xj "/dev/${pfBadDisk}" | jq -Mre '.serial_number | values')"
+fi
+if smartctl -q silent -d test "/dev/${pfNewDisk}"; then
+	pfNewSerial="$(smartctl -xj "/dev/${pfNewDisk}" | jq -Mre '.serial_number | values')"
+else
+	pfNewSerial="$(smartctl -d 'sat,auto' -xj "/dev/${pfNewDisk}" | jq -Mre '.serial_number | values')"
+fi
+
+echo "Old Disk Serial Number: ${pfOldSerial}"
+echo "New Disk Serial Number: ${pfNewSerial}"
 zpool status
