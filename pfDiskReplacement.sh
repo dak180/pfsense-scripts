@@ -278,6 +278,10 @@ unset IFS
 
 # Use Dependent Vars
 pfZfsPartNum="$(gpart show "${pfGoodDisk}" | grep 'zfs' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
+if [ -z "${pfZfsPartNum}" ]; then
+	echo "Does not appear to be a zfs file system." >&2
+	exit 1
+fi
 
 
 pfCheckDiskSize
