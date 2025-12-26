@@ -121,6 +121,7 @@ function pfInitializeDisk () {
 	fi
 
 	${pfBootCodeCmd} || { echo "Failed to set the boot code." >&2; exit 1;}
+	camcontrol rescan all
 }
 
 function pfZfsReplace() {
@@ -132,6 +133,7 @@ function pfZfsReplace() {
 		pfRplaceDisk="${pfBadDisk}p${pfZfsPartNum}"
 	fi
 	zpool replace "${pfZpoolName}" "/dev/${pfRplaceDisk}" "/dev/${pfZfsReadyName}" || { echo "Failed to replace the disk." >&2; exit 1;}
+	camcontrol rescan all
 }
 
 function pfMapLabels() {
