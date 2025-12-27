@@ -89,11 +89,11 @@ function pfInitializeDisk() {
 
 	# Get the bootcode command
 	if [ ! -z "${pfBootCode}" ]; then
-		if ! grep -q "/boot/pmbr" <<< "${pfBootCode}" && [ ! -f "/boot/pmbr" ]; then
+		if ! grep -q "/boot/pmbr" <<< "${pfBootCode}" || [ ! -f "/boot/pmbr" ]; then
 			echo "Failed to find the boot code." >&2
 			exit 1
 		fi
-		if ! grep -q "/boot/gptzfsboot" <<< "${pfBootCode}" && [ ! -f "/boot/gptzfsboot" ]; then
+		if ! grep -q "/boot/gptzfsboot" <<< "${pfBootCode}" || [ ! -f "/boot/gptzfsboot" ]; then
 			echo "Failed to find the boot code." >&2
 			exit 1
 		fi
