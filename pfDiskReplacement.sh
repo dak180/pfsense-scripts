@@ -71,7 +71,7 @@ function pfDiskLabel() {
 	fi
 }
 
-function pfInitializeDisk () {
+function pfInitializeDisk() {
 	# Vars
 	local pfBootCode="$(grep "gpart bootcode" /var/log/bsdinstall_log)"
 
