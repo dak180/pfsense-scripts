@@ -141,11 +141,15 @@ function pfInitializeDisk() {
 function pfZfsReplace() {
 	local pfZpoolName="$(zpool list -H -o name)"
 	local pfRplaceDisk
+
+	# Get the replacement disk name
 	if [ ! -z "${pfMemberName["${pfBadDisk}p${pfZfsPartNum}"]}" ]; then
 		pfRplaceDisk="${pfMemberName["${pfBadDisk}p${pfZfsPartNum}"]}"
 	else
 		pfRplaceDisk="${pfBadDisk}p${pfZfsPartNum}"
 	fi
+
+	# Replace the disk
 	zpool replace "${pfZpoolName}" "/dev/${pfRplaceDisk}" "/dev/${pfZfsReadyName}" || { echo "Failed to replace the disk." >&2; exit 1;}
 	camcontrol rescan all
 	sleep 3
@@ -158,6 +162,8 @@ function pfMapLabels() {
 	local value
 	pfZpoolStatus="$(zpool status -L)"
 
+
+	# Build the translation list
 	while IFS=$' \t' read -r key value; do
 		[[ -z "${key}" ]] && continue
 		labelTranslationList["${key}"]="${value}"
@@ -165,6 +171,7 @@ function pfMapLabels() {
 	unset IFS
 
 
+	# Translate the disk identifiers in zpool status
 	if echo "${pfZpoolStatus}" | grep -q 'gptid/'; then
 		local -a pfgptidList
 
