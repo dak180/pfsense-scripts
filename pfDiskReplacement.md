@@ -54,8 +54,7 @@ This approach prioritizes **supportability and predictability**, and it is the c
 This script is designed so that:
 
 - pfSense **continues running** during disk preparation
-- The replacement disk is fully initialized and bootable *before* ZFS
-  involvement
+- The replacement disk is fully initialized and bootable *before* ZFS involvement
 - ZFS resilvering happens live, in the background
 - No reboot is required
 
@@ -143,10 +142,8 @@ It does not attempt to replace the official recommendation. Instead, it fills th
 
 In short:
 
-- The official pfSense recommendation optimizes for certainty, at the cost of
-  downtime.
-- This script optimizes for **uptime**, assuming one healthy mirror member
-  remains.
+- The official pfSense recommendation optimizes for certainty, at the cost of downtime.
+- This script optimizes for **uptime**, assuming one healthy mirror member remains.
 - Both approaches are valid; they serve different operational priorities.
 
 For environments where continuity matters and the system is otherwise healthy, this script provides a controlled, repeatable way to replace disks **without taking the firewall offline**.
