@@ -149,7 +149,9 @@ function pfInitializeDisk() {
 
 		# Try mounting the efi partition from the template disk
 		mkdir -p "${pfEFIMountTemplate}"
-		mount -t msdosfs "/dev/${pfGoodDisk}p${pfEfiPartNum}" "${pfEFIMountTemplate}" || { echo "Failed to mount the efi partition." >&2; exit 1;}
+		if fsck_msdosfs -n "/dev/${pfGoodDisk}p${pfEfiPartNum}"  >/dev/null 2>&1; then
+			mount -t msdosfs "/dev/${pfGoodDisk}p${pfEfiPartNum}" "${pfEFIMountTemplate}" || { echo "Failed to mount the efi partition." >&2; exit 1;}
+		fi
 
 		if [ -f "${pfEFIMountTemplate}/efi/boot/BOOTX64.EFI" ] || [ -f "${pfEFIMountTemplate}/efi/freebsd/loader.efi" ]; then
 			cp -R "${pfEFIMountTemplate}/" "${pfEFIMountNew}" || { echo "Failed to set the efi boot code." >&2; exit 1;}
