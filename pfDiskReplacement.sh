@@ -12,8 +12,22 @@ set -o pipefail
 # Static Vars
 declare -A pfMemberName
 readarray -t "driveList" <<< "$(sysctl -n kern.disks | sed -e 's: :\n:g' | grep -v 'mmcsd' | grep -v 'sdda' | grep -v 'ccd' | sort -V)"
+pfEFIMountTemplate="/tmp/pfefi.template"
+pfEFIMountNew="/tmp/pfefi.new"
 
 # Functions
+function pfCleanup() {
+	# This code runs when the script exits
+	if mount | grep -q "${pfEFIMountTemplate}"; then
+		umount "${pfEFIMountTemplate}" >/dev/null 2>&1 || true
+	fi
+	if mount | grep -q "${pfEFIMountNew}"; then
+		umount "${pfEFIMountNew}" >/dev/null 2>&1 || true
+	fi
+}
+
+trap pfCleanup EXIT
+
 function pfDrUsage() {
 	tee >&2 << EOF
 Usage: ${0} [-h] [-t disk] [-r disk] [-n disk]
@@ -127,30 +141,31 @@ function pfInitializeDisk() {
 
 	# Setup the boot code
 	if [ ! -z "${pfEfiPartNum}" ]; then
+		# Initialize the new EFI partition
 		newfs_msdos -F 32 -c 1 -L "EFISYS${pfNewDiskNum}"  "/dev/gpt/efiboot${pfNewDiskNum}" || { echo "Failed to initialize the ms_dos partition." >&2; exit 1;}
-		mount -t msdosfs "/dev/gpt/efiboot${pfNewDiskNum}" /mnt/ || { echo "Failed to mount the ms_dos partition." >&2; exit 1;}
+		mkdir -p "${pfEFIMountNew}"
+		mount -t msdosfs "/dev/gpt/efiboot${pfNewDiskNum}" "${pfEFIMountNew}" || { echo "Failed to mount the ms_dos partition." >&2; exit 1;}
 
-		if mount | grep -q "/boot/efi"; then
-			# If /boot/efi is already a mounted filesystem use it directly as a source
-			cp -R /boot/efi/ /mnt || { echo "Failed to set the efi boot code." >&2; exit 1;}
+
+		# Try mounting the efi partition from the template disk
+		mkdir -p "${pfEFIMountTemplate}"
+		mount -t msdosfs "/dev/${pfGoodDisk}p${pfEfiPartNum}" "${pfEFIMountTemplate}" || { echo "Failed to mount the efi partition." >&2; exit 1;}
+
+		if [ -f "${pfEFIMountTemplate}/efi/boot/BOOTX64.EFI" ] || [ -f "${pfEFIMountTemplate}/efi/freebsd/loader.efi" ]; then
+			cp -R "${pfEFIMountTemplate}/" "${pfEFIMountNew}" || { echo "Failed to set the efi boot code." >&2; exit 1;}
+		elif [ -f "/boot/loader.efi" ]; then
+			# If the template is empty try to build it manuallly
+			mkdir -p "${pfEFIMountNew}/efi/freebsd/" "${pfEFIMountNew}/efi/boot/" || { echo "Failed to set the efi boot code." >&2; exit 1;}
+			cp -R "/boot/loader.efi" "${pfEFIMountNew}/efi/boot/BOOTX64.EFI" || { echo "Failed to set the efi boot code." >&2; exit 1;}
+			cp -R "/boot/loader.efi" "${pfEFIMountNew}/efi/freebsd/loader.efi" || { echo "Failed to set the efi boot code." >&2; exit 1;}
 		else
-			# Try mounting the efi partition from the template disk
-			mount -t msdosfs "/dev/${pfGoodDisk}p${pfEfiPartNum}" /boot/efi || { echo "Failed to mount the efi partition." >&2; exit 1;}
-			if [ ! -z "$(ls -A /boot/efi/)" ]; then
-				cp -R /boot/efi/ /mnt || { echo "Failed to set the efi boot code." >&2; exit 1;}
-			elif [ -f "/boot/loader.efi" ]; then
-				# If the template is empty try to build it manuallly
-				mkdir -p "/mnt/efi/freebsd/" "/mnt/efi/boot/" || { echo "Failed to set the efi boot code." >&2; exit 1;}
-				cp -R "/boot/loader.efi" "/mnt/efi/boot/BOOTX64.EFI" || { echo "Failed to set the efi boot code." >&2; exit 1;}
-				cp -R "/boot/loader.efi" "/mnt/efi/freebsd/loader.efi" || { echo "Failed to set the efi boot code." >&2; exit 1;}
-			else
-				echo "Failed to find the efi boot code." >&2
-				exit 1
-			fi
-			umount /boot/efi || { echo "Failed to unmount the efi partition." >&2; exit 1;}
+			echo "Failed to find the efi boot code." >&2
+			exit 1
 		fi
 
-		umount /mnt || { echo "Failed to unmount the ms_dos partition." >&2; exit 1;}
+		umount "${pfEFIMountTemplate}" || { echo "Failed to unmount the efi partition." >&2; exit 1;}
+
+		umount "${pfEFIMountNew}" || { echo "Failed to unmount the ms_dos partition." >&2; exit 1;}
 	fi
 
 	${pfBootCodeCmd} || { echo "Failed to set the boot code." >&2; exit 1;}
