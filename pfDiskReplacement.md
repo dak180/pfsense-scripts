@@ -75,9 +75,9 @@ On systems that support true drive hot swap, the advantages of this approach are
 
 Because the script prepares and replaces the disk while pfSense remains running, a failed or aging drive can often be:
 
-- Physically removed while the system is online
 - Replaced with new media without powering down
-- Integrated into the ZFS mirror immediately
+- Detached from the ZFS mirror immediately
+- Physically removed while the system is online
 
 In these environments, disk replacement can be performed with:
 
@@ -115,7 +115,7 @@ This script allows disk replacement to be:
 For home lab operators:
 
 - Reinstalling pfSense disrupts connectivity and hosted services
-- Rebuilding ZFS pools can be error prone
+- Rebuilding ZFS pools manually can be error prone
 - Experimentation carries higher risk
 
 This script enables:
