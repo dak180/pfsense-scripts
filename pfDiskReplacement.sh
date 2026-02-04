@@ -306,8 +306,13 @@ You have selected:
 	"Old" disk: ${pfBadDisk} (will be replaced in the pool)
 
 EOF
-	read -rp $'\n\nContinue?\n[y|N] ' choice
-
+	echo "Continue?"
+	select choice in "Yes" "No"; do
+		case ${choice} in
+			Yes ) true; break;;
+			No ) exit;;
+		esac
+	done
 fi
 
 
