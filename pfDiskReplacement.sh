@@ -129,7 +129,27 @@ function pfInitializeDisk() {
 	if [ ! -z "${pfEfiPartNum}" ]; then
 		newfs_msdos -F 32 -c 1 -L "EFISYS${pfNewDiskNum}"  "/dev/gpt/efiboot${pfNewDiskNum}" || { echo "Failed to initialize the ms_dos partition." >&2; exit 1;}
 		mount -t msdosfs "/dev/gpt/efiboot${pfNewDiskNum}" /mnt/ || { echo "Failed to mount the ms_dos partition." >&2; exit 1;}
-		cp -R /boot/efi/ /mnt || { echo "Failed to set the efi boot code." >&2; exit 1;}
+
+		if mount | grep -q "/boot/efi"; then
+			# If /boot/efi is already a mounted filesystem use it directly as a source
+			cp -R /boot/efi/ /mnt || { echo "Failed to set the efi boot code." >&2; exit 1;}
+		else
+			# Try mounting the efi partition from the template disk
+			mount -t msdosfs "/dev/${pfGoodDisk}p${pfEfiPartNum}" /boot/efi || { echo "Failed to mount the efi partition." >&2; exit 1;}
+			if [ ! -z "$(ls -A /boot/efi/)" ]; then
+				cp -R /boot/efi/ /mnt || { echo "Failed to set the efi boot code." >&2; exit 1;}
+			elif [ -f "/boot/loader.efi" ]; then
+				# If the template is empty try to build it manuallly
+				mkdir -p "/mnt/efi/freebsd/" "/mnt/efi/boot/" || { echo "Failed to set the efi boot code." >&2; exit 1;}
+				cp -R "/boot/loader.efi" "/mnt/efi/boot/BOOTX64.EFI" || { echo "Failed to set the efi boot code." >&2; exit 1;}
+				cp -R "/boot/loader.efi" "/mnt/efi/freebsd/loader.efi" || { echo "Failed to set the efi boot code." >&2; exit 1;}
+			else
+				echo "Failed to find the efi boot code." >&2
+				exit 1
+			fi
+			umount /boot/efi || { echo "Failed to unmount the efi partition." >&2; exit 1;}
+		fi
+
 		umount /mnt || { echo "Failed to unmount the ms_dos partition." >&2; exit 1;}
 	fi
 
@@ -343,3 +363,5 @@ echo "Old Disk Serial Number (${pfBadDisk}): ${pfOldSerial}"
 echo "New Disk Serial Number (${pfNewDisk}): ${pfNewSerial}"
 glabel status
 zpool status
+cat /etc/fstab
+echo "Check the fstab file to be sure the efi and swap devices are not a required mount"
