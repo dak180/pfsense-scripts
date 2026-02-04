@@ -35,4 +35,4 @@ Usage (via cron):
 /usr/bin/nice -n20 /usr/local/bin/php -q /root/pkg_check.php
 ```
 
-This can also be scheduled via cron for automation.
+This is intended to be scheduled via cron for automation.
