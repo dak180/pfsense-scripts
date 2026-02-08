@@ -93,8 +93,8 @@ function pfInitializeDisk() {
 	local pfSwapPartNum="$(gpart show "${pfGoodDisk}" | grep 'swap' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 	local pfEfiPartNum="$(gpart show "${pfGoodDisk}" | grep 'efi' | sed -e 's:^[[:space:]]*::' | tr -s ' ' | cut -wf 3)"
 
-	local pfOldDiskNum="$(echo "${pfGoodDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::' -e 's:nda::' -e 's:md::' -e 's:ccd::')"
-	local pfNewDiskNum="$(echo "${pfNewDisk}" | sed -e 's:ada::' -e 's:da::' -e 's:nvd::' -e 's:nda::' -e 's:md::' -e 's:ccd::')"
+	local pfOldDiskNum="$(echo "${pfGoodDisk}" | sed -e 's:[[:alpha:]]*::')"
+	local pfNewDiskNum="$(echo "${pfNewDisk}" | sed -e 's:[[:alpha:]]*::')"
 
 	# Determine the disk number
 	if [ "${pfOldDiskNum}" -ge "${pfNewDiskNum}" ]; then
@@ -212,7 +212,7 @@ function pfMapLabels() {
 	if echo "${pfZpoolStatus}" | grep -q 'gptid/'; then
 		local -a pfgptidList
 
-		readarray -t "pfgptidList" <<< "$(zpool status -L | grep 'gptid/' | sed -e 's:^[[:space:]]*::' | cut -wf 1)"
+		readarray -t "pfgptidList" <<< "$(grep 'gptid/' <<< "${pfZpoolStatus}" | sed -e 's:^[[:space:]]*::' | cut -wf 1)"
 
 		local diskID
 		for diskID in "${pfgptidList[@]}"; do
@@ -225,7 +225,7 @@ function pfMapLabels() {
 	if zpool status -L | grep -q 'gpt/'; then
 		local -a pfgptList
 
-		readarray -t "pfgptList" <<< "$(zpool status -L | grep 'gpt/' | sed -e 's:^[[:space:]]*::' | cut -wf 1)"
+		readarray -t "pfgptList" <<< "$(grep 'gpt/' <<< "${pfZpoolStatus}" | sed -e 's:^[[:space:]]*::' | cut -wf 1)"
 
 		local diskID
 		for diskID in "${pfgptList[@]}"; do
