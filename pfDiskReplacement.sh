@@ -9,6 +9,38 @@ set -o pipefail
 # https://www.yourwarrantyisvoid.com/2023/05/04/pfsense-replacing-a-failed-zfs-disk/
 # https://wiki.joeplaa.com/en/zfs
 
+
+# ---------------------------------------------------------------------------
+# Operational Invariants
+#
+# This script assumes the following conditions are always true. Behavior is
+# undefined if any invariant is violated.
+#
+# 1. The system is pfSense (appliance-style FreeBSD) with a single ZFS pool.
+# 2. The ZFS pool consists only of mirror(s) (no raidz or special vdevs).
+# 3. At least one healthy member of each mirror remains online.
+# 4. The "New" disk may be safely and irreversibly erased.
+# 5. The "Good" disk has a valid GPT layout suitable for booting pfSense.
+# 6. The "Good" disk's EFI partition may be present or absent; if present it may
+#    be mountable or unmountable. If mountable and containing the required boot
+#    files, those files must be functionally usable.
+# 7. All swap devices may be safely disabled during disk replacement (-s).
+# 8. The "New" disk is at least as large as the "Good" disk.
+#
+# Design Notes:
+# - ZFS vdev identifiers are normalized internally to GPTIDs or GPT labels
+#   when possible to ensure stable replacement behavior.
+# - EFI contents are cloned when available to preserve boot behavior exactly.
+# - Minimal EFI construction is a fallback and not a full reproduction.
+# - Global swap disablement is intentional to prevent kernel access to
+#   disappearing devices during hot-swap operations.
+#
+# Operational Notes:
+# - Disk replacement is performed online and does not require a reboot.
+# - A reboot may still be desirable after replacement for operator assurance.
+# ---------------------------------------------------------------------------
+
+
 # Static Vars
 declare -A pfMemberName
 readarray -t "driveList" <<< "$(sysctl -n kern.disks | sed -e 's: :\n:g' | grep -v 'mmcsd' | grep -v 'sdda' | grep -v 'ccd' | sort -V)"
